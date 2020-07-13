@@ -39,23 +39,27 @@ class Calculator:
         today = dt.date.today()
         week_stats = sum([record.amount
                           for record in self.records
-                          if 0 <= (today-record.date).days < 7])
+                          if (today - dt.timedelta(days=7))
+                          <= record.date
+                          <= today])
         return week_stats
 
 
 class CaloriesCalculator(Calculator):
 
     def get_calories_remained(self):
-        if self.today_remained() > 0:
-            return(
-                f"Сегодня можно съесть что-нибудь ещё, но "
-                f"с общей калорийностью не более {self.today_remained()} кКал"
+        amount_remained = self.today_remained()
+        if amount_remained > 0:
+            return (
+                'Сегодня можно съесть что-нибудь ещё, но '
+                f'с общей калорийностью не более {amount_remained} кКал'
             )
         else:
             return 'Хватит есть!'
 
 
 class CashCalculator(Calculator):
+
     USD_RATE = float(60)
     EURO_RATE = float(70)
     RUB_RATE = float(1)
@@ -66,14 +70,16 @@ class CashCalculator(Calculator):
             'usd': ('USD', self.USD_RATE),
             'rub': ('руб', self.RUB_RATE),
         }
-        value_currency = (str(abs(round(
-            self.today_remained()
-            / currencies[currency][1], 2)))
-            + ' '
-            + str(currencies[currency][0]))
-        if not self.today_remained():
+        currency_name, currency_rate = currencies[currency]
+        amount_remained = self.today_remained()
+        if not amount_remained:
             return 'Денег нет, держись'
-        elif self.today_remained() > 0:
-            return(f"На сегодня осталось {value_currency}")
-        elif self.today_remained() < 0:
-            return(f"Денег нет, держись: твой долг - {value_currency}")
+        else:
+            value_currency = (abs(round(amount_remained / currency_rate, 2)))
+            if amount_remained > 0:
+                return f'На сегодня осталось {value_currency} {currency_name}'
+            else:
+                return (
+                    'Денег нет, держись: твой долг - '
+                    f'{value_currency} {currency_name}'
+                )
